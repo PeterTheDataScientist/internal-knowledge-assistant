@@ -1,0 +1,8 @@
+-r requirements.txt
+
+# Optional, recommended. Adds the local neural embedder and the FAISS index. This pulls
+# PyTorch, which is a large download, so it is kept out of the core file: anyone on a
+# slow link gets a working service first and better retrieval second. The evaluation
+# results in EVALUATION.md were measured with these installed.
+sentence-transformers>=3.0.0
+faiss-cpu>=1.8.0

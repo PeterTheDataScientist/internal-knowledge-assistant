@@ -1,0 +1,66 @@
+sequenceDiagram
+    autonumber
+    participant U as Employee
+    participant GW as Front Door + APIM
+    participant ID as Entra ID / OIDC
+    participant API as AI service /ask
+    participant CA as Redis cache
+    participant IGD as Input guard
+    participant VDB as Vector DB + BM25
+    participant RR as Reranker
+    participant LLM as Model endpoint
+    participant GC as Grounding check
+    participant OBS as Logs and metrics
+
+    U->>GW: POST /ask, question, bearer token
+    GW->>ID: validate token, read group claims
+    ID-->>GW: identity + ACL groups
+    GW->>API: forward with x-request-id and ACL groups
+
+    API->>CA: lookup question hash + corpus version + ACL
+    alt Cache hit
+        CA-->>API: cached verified answer
+        API-->>U: 200, answer, sources, cached true
+    else Cache miss
+        API->>IGD: screen question
+        alt Injection or confidential request
+            IGD-->>API: blocked, reason prompt_injection
+            API->>OBS: log refusal, question hash only
+            API-->>U: 200, refusal sentence, answered_from_context false
+        else Allowed
+            IGD-->>API: sanitised question
+            par Parallel retrieval
+                API->>VDB: dense search, ACL and domain prefilter
+            and
+                API->>VDB: BM25 search, same filters
+            end
+            VDB-->>API: 50 candidates, RRF fused
+            alt Best score below relevance threshold
+                API->>OBS: log no_relevant_context
+                API-->>U: 200, refusal sentence, no model call
+            else Relevant
+                API->>RR: rerank 50 candidates
+                RR-->>API: top 8 chunks
+                API->>API: context guard strips untrusted instructions
+                API->>LLM: system prompt + numbered context, JSON mode
+                LLM-->>API: sufficient, answer, citations
+                API->>GC: validate citations, numbers, lexical support
+                alt Ungrounded figure
+                    GC-->>API: ungrounded_numbers
+                    API->>LLM: one bounded regeneration with correction
+                    LLM-->>API: corrected JSON
+                    API->>GC: re-assess
+                end
+                alt Grounding or output guard fails
+                    GC-->>API: reject, low_groundedness or output_blocked
+                    API->>OBS: log rejection reason and scores
+                    API-->>U: 200, refusal sentence
+                else Passes
+                    GC-->>API: valid citations, support score
+                    API->>CA: store verified answer under composite key
+                    API->>OBS: log latency, sources, confidence, cost
+                    API-->>U: 200, answer, citations, confidence, request_id
+                end
+            end
+        end
+    end

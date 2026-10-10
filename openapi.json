@@ -1,0 +1,910 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Internal Knowledge Assistant",
+    "description": "Retrieval augmented assistant over Contoso Financial internal documentation.\n\nThe service answers only from the indexed corpus, returns the source file for every\nclaim, and replies with `I don't have sufficient information in the provided documents.`\nwhenever the retrieved passages do not support an answer.\n\nGuardrails run on the question, on the retrieved passages, and on the generated answer.",
+    "contact": {
+      "name": "Peter Tinashe Mundowa"
+    },
+    "license": {
+      "name": "Proprietary"
+    },
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "Liveness and readiness",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ask": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Ask a question about Contoso Financial internal documentation",
+        "operationId": "ask_ask_post",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AskResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body failed validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Index or model backend unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Model backend timed out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/ask/stream": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Ask a question and receive the verified answer as a server-sent event stream",
+        "operationId": "ask_stream_ask_stream_post",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Model backend unavailable"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/feedback": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Record whether an answer was useful",
+        "operationId": "feedback_feedback_post",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "Service metrics snapshot",
+        "operationId": "metrics_snapshot_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sources": {
+      "get": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "List indexed documents",
+        "operationId": "sources_sources_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Sources Sources Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AskRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 3,
+            "title": "Question",
+            "description": "Natural language question about Contoso Financial internal documentation.",
+            "examples": [
+              "How many leave days does an employee receive?"
+            ]
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id",
+            "description": "Optional conversation identifier. When supplied, the previous turns of that conversation are used to resolve follow-up questions."
+          },
+          "top_k": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 20.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top K",
+            "description": "Override the number of chunks passed to the model."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "AskRequest"
+      },
+      "AskResponse": {
+        "properties": {
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/Confidence"
+          },
+          "answered_from_context": {
+            "type": "boolean",
+            "title": "Answered From Context"
+          },
+          "refusal_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refusal Reason",
+            "description": "Why the assistant declined, when it declined. The answer text is the same in every refusal case so that a probing caller cannot learn which control fired; this field carries the detail for operators."
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "type": "array",
+            "title": "Citations"
+          },
+          "safety": {
+            "$ref": "#/components/schemas/SafetyReport"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "title": "Latency Ms"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answer",
+          "confidence",
+          "answered_from_context",
+          "request_id",
+          "latency_ms",
+          "model"
+        ],
+        "title": "AskResponse",
+        "example": {
+          "answer": "Permanent employees receive 22 working days of annual leave per calendar year.",
+          "answered_from_context": true,
+          "confidence": "High",
+          "sources": [
+            "hr-leave-policy.md"
+          ]
+        }
+      },
+      "Citation": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Source file name, for example hr-leave-policy.md"
+          },
+          "chunk_id": {
+            "type": "string",
+            "title": "Chunk Id"
+          },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section",
+            "description": "Heading the passage was taken from."
+          },
+          "score": {
+            "type": "number",
+            "title": "Score",
+            "description": "Fused retrieval score, higher is more relevant."
+          },
+          "excerpt": {
+            "type": "string",
+            "title": "Excerpt",
+            "description": "Trimmed passage used to support the answer."
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "chunk_id",
+          "score",
+          "excerpt"
+        ],
+        "title": "Citation",
+        "description": "A single supporting passage, returned so a reader can verify the answer."
+      },
+      "Confidence": {
+        "type": "string",
+        "enum": [
+          "High",
+          "Medium",
+          "Low",
+          "None"
+        ],
+        "title": "Confidence"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "FeedbackRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Request Id"
+          },
+          "helpful": {
+            "type": "boolean",
+            "title": "Helpful"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "helpful"
+        ],
+        "title": "FeedbackRequest"
+      },
+      "FeedbackResponse": {
+        "properties": {
+          "recorded": {
+            "type": "boolean",
+            "title": "Recorded"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recorded",
+          "request_id"
+        ],
+        "title": "FeedbackResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthComponent": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "HealthComponent"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "environment": {
+            "type": "string",
+            "title": "Environment"
+          },
+          "uptime_seconds": {
+            "type": "number",
+            "title": "Uptime Seconds"
+          },
+          "documents": {
+            "type": "integer",
+            "title": "Documents"
+          },
+          "chunks": {
+            "type": "integer",
+            "title": "Chunks"
+          },
+          "embedding_backend": {
+            "type": "string",
+            "title": "Embedding Backend"
+          },
+          "llm_provider": {
+            "type": "string",
+            "title": "Llm Provider"
+          },
+          "llm_model": {
+            "type": "string",
+            "title": "Llm Model"
+          },
+          "components": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/HealthComponent"
+            },
+            "type": "object",
+            "title": "Components"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "version",
+          "environment",
+          "uptime_seconds",
+          "documents",
+          "chunks",
+          "embedding_backend",
+          "llm_provider",
+          "llm_model",
+          "components"
+        ],
+        "title": "HealthResponse"
+      },
+      "MetricsResponse": {
+        "properties": {
+          "requests_total": {
+            "type": "integer",
+            "title": "Requests Total"
+          },
+          "refusals_total": {
+            "type": "integer",
+            "title": "Refusals Total"
+          },
+          "errors_total": {
+            "type": "integer",
+            "title": "Errors Total"
+          },
+          "injection_blocks_total": {
+            "type": "integer",
+            "title": "Injection Blocks Total"
+          },
+          "confidential_blocks_total": {
+            "type": "integer",
+            "title": "Confidential Blocks Total"
+          },
+          "refusal_rate": {
+            "type": "number",
+            "title": "Refusal Rate"
+          },
+          "refusal_reasons": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Refusal Reasons"
+          },
+          "latency_ms_avg": {
+            "type": "number",
+            "title": "Latency Ms Avg"
+          },
+          "latency_ms_p50": {
+            "type": "number",
+            "title": "Latency Ms P50"
+          },
+          "latency_ms_p95": {
+            "type": "number",
+            "title": "Latency Ms P95"
+          },
+          "confidence_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Confidence Counts"
+          },
+          "feedback_positive": {
+            "type": "integer",
+            "title": "Feedback Positive"
+          },
+          "feedback_negative": {
+            "type": "integer",
+            "title": "Feedback Negative"
+          }
+        },
+        "type": "object",
+        "required": [
+          "requests_total",
+          "refusals_total",
+          "errors_total",
+          "injection_blocks_total",
+          "confidential_blocks_total",
+          "refusal_rate",
+          "refusal_reasons",
+          "latency_ms_avg",
+          "latency_ms_p50",
+          "latency_ms_p95",
+          "confidence_counts",
+          "feedback_positive",
+          "feedback_negative"
+        ],
+        "title": "MetricsResponse"
+      },
+      "SafetyReport": {
+        "properties": {
+          "input_flagged": {
+            "type": "boolean",
+            "title": "Input Flagged",
+            "default": false
+          },
+          "context_sanitised": {
+            "type": "boolean",
+            "title": "Context Sanitised",
+            "default": false
+          },
+          "output_flagged": {
+            "type": "boolean",
+            "title": "Output Flagged",
+            "default": false
+          },
+          "triggered_rules": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Triggered Rules"
+          },
+          "injection_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Injection Score",
+            "description": "Prompt Guard probability that the input is an injection."
+          }
+        },
+        "type": "object",
+        "title": "SafetyReport"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Required when REQUIRE_API_KEY is true. In production this is replaced by an OIDC bearer token issued by the corporate identity provider."
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local development"
+    },
+    {
+      "url": "https://knowledge-assistant.internal.contoso.example",
+      "description": "Illustrative internal deployment"
+    }
+  ],
+  "tags": [
+    {
+      "name": "assistant",
+      "description": "Question answering over Contoso Financial internal documentation"
+    },
+    {
+      "name": "operations",
+      "description": "Health, metrics and index introspection"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+[project]
+name = "internal-knowledge-assistant"
+version = "1.0.0"
+description = "Retrieval augmented internal knowledge assistant for Contoso Financial"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "SIM", "C4"]
+ignore = [
+    # FastAPI declares dependencies as call expressions in argument defaults. This is the
+    # framework's documented pattern, not the mutable-default bug the rule looks for.
+    "B008",
+    # Loop variables that are deliberately unused in a comprehension over pairs.
+    "B905",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Prompt text lives on single lines. Wrapping it would change the string the model sees.
+"app/rag/prompts.py" = ["E501"]
+# Example questions are copied verbatim from eval/questions.jsonl, so they stay on one line.
+"streamlit_app.py" = ["E501"]
+# The ablation reaches into retriever internals on purpose to reproduce a fixed bug.
+"eval/ablation_retrieval.py" = ["SLF001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning"]

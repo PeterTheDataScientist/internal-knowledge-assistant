@@ -1,0 +1,100 @@
+flowchart TB
+
+    subgraph USERS["1. Users"]
+        direction LR
+        BROWSER["Employee browser"]
+        TEAMS["Microsoft Teams client"]
+    end
+
+    subgraph EDGE["2. API gateway"]
+        direction LR
+        FD["Front Door + WAF<br/>TLS 1.3, DDoS, rate limit"]
+        APIM["API Management<br/>routing, quotas, mTLS"]
+        FD --> APIM
+    end
+
+    subgraph AUTH["3. Authentication"]
+        direction LR
+        ENTRA["Entra ID / OIDC<br/>token validation"]
+        CLAIMS["Group claims<br/>mapped to ACL filter"]
+        ENTRA --> CLAIMS
+    end
+
+    subgraph AI["4. AI service, AKS, 8 to 24 pods"]
+        direction TB
+        IG["Input guard<br/>pattern rules + Prompt Guard 2"]
+        CACHE["Cache lookup"]
+        RET["Hybrid retriever<br/>dense + BM25, RRF fusion"]
+        RR["Reranker<br/>cross encoder, 50 to 8"]
+        GEN["Generator<br/>JSON mode, temperature 0"]
+        GC["Grounding check<br/>citations, numbers, support"]
+        OG["Output guard<br/>leak rules"]
+        IG --> CACHE --> RET --> RR --> GEN --> GC --> OG
+    end
+
+    subgraph LLM["5. Model endpoints"]
+        direction LR
+        FAST["Small model<br/>easy path, 70% of traffic"]
+        BIG["Large model<br/>escalation"]
+    end
+
+    subgraph STORE["6. Vector database and indexes"]
+        direction LR
+        VDB[("Vector index<br/>HNSW + int8<br/>2M to 4M vectors<br/>alias: live / shadow")]
+        LEX[("BM25 index")]
+        RCACHE[("Redis<br/>response, semantic<br/>and embedding caches")]
+    end
+
+    subgraph INGEST["7. Ingestion pipeline"]
+        direction LR
+        REPO[("Document repository<br/>SharePoint / Blob<br/>system of record")]
+        CDC["Event Grid CDC<br/>content hash compare"]
+        PARSE["Layout aware parse<br/>OCR, tables, chunking"]
+        EMB["Embedding workers<br/>GPU"]
+        SWAP["Shadow build<br/>eval gate, alias swap"]
+        REPO --> CDC --> PARSE --> EMB --> SWAP
+    end
+
+    subgraph OPS["8. Logging and monitoring"]
+        direction LR
+        LOGS["JSON logs<br/>question hashes only"]
+        AUDIT[("Audit store<br/>append only, 7 years")]
+        OTEL["OpenTelemetry<br/>span per stage"]
+        MON["App Insights<br/>KPIs, alerts, dashboards"]
+        LOGS --> MON
+        OTEL --> MON
+    end
+
+    subgraph SEC["9. Secrets management"]
+        direction LR
+        WID["Workload identity<br/>no keys in images"]
+        KV["Key Vault<br/>API keys, CMK<br/>90 day rotation"]
+        WID --> KV
+    end
+
+    BROWSER --> FD
+    TEAMS --> FD
+    APIM --> ENTRA
+    CLAIMS -->|"identity + ACL groups"| IG
+
+    CACHE <-->|"question hash, corpus version, ACL"| RCACHE
+    RET -->|"ACL and domain prefilter"| VDB
+    RET -->|"same filters"| LEX
+    GEN -->|"easy path"| FAST
+    GEN -->|"escalation"| BIG
+
+    SWAP --> VDB
+    SWAP --> LEX
+
+    OG --> LOGS
+    OG --> AUDIT
+    GC -.-> OTEL
+
+    KV -.-> APIM
+    KV -.-> GEN
+    KV -.-> EMB
+
+    classDef guard fill:#fde8e8,stroke:#c53030
+    classDef store fill:#e6f2ff,stroke:#2b6cb0
+    class IG,GC,OG guard
+    class VDB,LEX,RCACHE,REPO,AUDIT store

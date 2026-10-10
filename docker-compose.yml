@@ -1,0 +1,24 @@
+services:
+  assistant:
+    build: .
+    image: internal-knowledge-assistant:1.0.0
+    ports:
+      - "8000:8000"
+    environment:
+      GROQ_API_KEYS: ${GROQ_API_KEYS:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-auto}
+      ENVIRONMENT: ${ENVIRONMENT:-local}
+      LOG_FORMAT: json
+      RATE_LIMIT_PER_MINUTE: 60
+    volumes:
+      - model-cache:/home/app/.cache/huggingface
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health',timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    restart: unless-stopped
+
+volumes:
+  model-cache:

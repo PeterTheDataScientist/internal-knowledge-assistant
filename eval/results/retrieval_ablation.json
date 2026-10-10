@@ -1,0 +1,49 @@
+{
+  "top_k": 6,
+  "cases": 29,
+  "multi_document_cases": 9,
+  "all": {
+    "dense only": {
+      "recall_at_k": 0.989,
+      "hit_rate": 1.0,
+      "mrr": 0.954
+    },
+    "lexical only, BM25": {
+      "recall_at_k": 0.96,
+      "hit_rate": 1.0,
+      "mrr": 0.938
+    },
+    "hybrid, selection on dense score": {
+      "recall_at_k": 0.96,
+      "hit_rate": 1.0,
+      "mrr": 0.957
+    },
+    "hybrid, selection on fused score": {
+      "recall_at_k": 0.96,
+      "hit_rate": 1.0,
+      "mrr": 0.957
+    }
+  },
+  "multi_document": {
+    "dense only": {
+      "recall_at_k": 0.963,
+      "hit_rate": 1.0,
+      "mrr": 0.926
+    },
+    "lexical only, BM25": {
+      "recall_at_k": 0.87,
+      "hit_rate": 1.0,
+      "mrr": 0.889
+    },
+    "hybrid, selection on dense score": {
+      "recall_at_k": 0.87,
+      "hit_rate": 1.0,
+      "mrr": 0.944
+    },
+    "hybrid, selection on fused score": {
+      "recall_at_k": 0.87,
+      "hit_rate": 1.0,
+      "mrr": 0.944
+    }
+  }
+}
