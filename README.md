@@ -8,6 +8,8 @@ whenever the retrieved passages do not support an answer.
 
 Built by **Peter Tinashe Mundowa**.
 
+**Live demo:** [grounded-knowledge-assistant.streamlit.app](https://grounded-knowledge-assistant.streamlit.app), running the offline model with no key needed. The first load can take up to a minute while the free host wakes the app.
+
 The documents in data/ describe Contoso Financial, a fictional financial group. Every policy,
 figure, threshold and procedure in them is invented test material.
 
@@ -15,16 +17,15 @@ figure, threshold and procedure in them is invented test material.
 
 | Item | Where |
 | --- | --- |
-| Working source code | `app/`, runnable with no API key |
-| README | this file |
+| Source code | `app/`, runnable with no API key |
 | Design for scale | `DESIGN.md` |
 | Production notes | `PRODUCTION_NOTES.md` |
 | Evaluation results | `EVALUATION.md`, raw output in `eval/results/` |
 | Architecture diagram | `docs/architecture.png`, request flow in `docs/request_flow.png` |
 | OpenAPI specification | `openapi.yaml` and `openapi.json`, also served at `/openapi.json` |
 | Postman collection | `postman_collection.json`, every request carries assertions |
-| Also built | hybrid search, reranker hook, streaming, conversational memory, feedback capture, structured JSON output, Dockerfile, 94 tests, rate limiting, request validation, metrics endpoint, CI workflow with a safety gate |
-| Live demo | `streamlit_app.py`, see [Live demo](#live-demo) |
+| Features | hybrid search, reranker hook, streaming, conversational memory, feedback capture, structured JSON output, Dockerfile, 94 tests, rate limiting, request validation, metrics endpoint, CI workflow with a safety gate |
+| Live demo | [grounded-knowledge-assistant.streamlit.app](https://grounded-knowledge-assistant.streamlit.app), source in `streamlit_app.py` |
 | Note on AI assistance | `AI_ASSISTANCE.md` |
 
 ---
@@ -90,6 +91,8 @@ python scripts/build_index.py    # ingest and print what was indexed
 ---
 
 ## Live demo
+
+Try it at https://grounded-knowledge-assistant.streamlit.app.
 
 `streamlit_app.py` is a one-page demo that answers through the same `RAGPipeline` that
 `POST /ask` uses, in process rather than over HTTP. It runs from `requirements.txt` alone:
